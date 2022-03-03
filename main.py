@@ -1,16 +1,25 @@
-from flask import Flask, render_template, redirect, abort, request
-from data import db_session
+from flask import Flask, render_template, redirect, abort, request, jsonify, make_response
+from data import db_session, news_api, news_resources
 from data.users import User
 from data.news import News
 from forms.news import NewsForm
 from forms.user import RegisterForm, LoginForm
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
+from flask_restful import reqparse, abort, Api, Resource
 
 app = Flask(__name__)
+api = Api(app)
 app.config['SECRET_KEY'] = 'very_secret_key'
 login_manager = LoginManager()
 login_manager.init_app(app)
 
+@app.errorhandler(404)
+def not_found(error):
+    return make_response(jsonify({'error': 'Not found'}), 404)
+
+@app.errorhandler(405)
+def not_found(error):
+    return make_response(jsonify({'error': 'This method is not allowed'}), 405)
 
 @app.route('/')
 def index():
@@ -56,6 +65,12 @@ def login():
                                message="Неправильный логин или пароль",
                                form=form)
     return render_template('login.html', title='Авторизация', form=form)
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect("/")
 
 
 @app.route('/news',  methods=['GET', 'POST'])
@@ -117,6 +132,7 @@ def news_delete(id):
 
 
 
+
 @login_manager.user_loader
 def load_user(user_id):
     db = db_session.create_session()
@@ -125,6 +141,9 @@ def load_user(user_id):
 
 def main():
     db_session.global_init('db/blogs.db')
+    # app.register_blueprint(news_api.blueprint)
+    api.add_resource(news_resources.NewsListResource, '/api/v2/news')
+    api.add_resource(news_resources.NewsResource, '/api/v2/news/<int:news_id>')
     app.run()
 
 
