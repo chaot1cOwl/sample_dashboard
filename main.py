@@ -1,3 +1,5 @@
+import os
+
 from flask import Flask, render_template, redirect, abort, request, jsonify, make_response
 from data import db_session, news_api, news_resources
 from data.users import User
@@ -144,7 +146,8 @@ def main():
     # app.register_blueprint(news_api.blueprint)
     api.add_resource(news_resources.NewsListResource, '/api/v2/news')
     api.add_resource(news_resources.NewsResource, '/api/v2/news/<int:news_id>')
-    app.run()
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)
 
 
 if __name__ == '__main__':
